@@ -22,10 +22,6 @@ public sealed class InspectorAttribute : PropertyAttribute
 
     public string Name { get; private set; }
 
-    //public bool IsExp { get; private set; }
-
-    private bool isExp;
-
     public InspectorAttribute(string dispName) => this.Name = dispName;
 
 #if UNITY_EDITOR
@@ -34,12 +30,14 @@ public sealed class InspectorAttribute : PropertyAttribute
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
+            //Debug.Log($"{property.propertyPath}");
+
             if (!(this.attribute is InspectorAttribute fieldName))
             {
                 return;
             }
 
-            Debug.Log($"{property.propertyPath}, {property.type}, {fieldName.Name}, {property.isExpanded}");
+            //Debug.Log($"{property.propertyPath}, {property.type}, {fieldName.Name}, {property.isExpanded}");
 
             string[] path = property.propertyPath.Split('.');
 
