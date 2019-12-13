@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Text;
 using UnityEditor;
 using UnityEngine;
 
@@ -30,7 +31,7 @@ public sealed class InspectorAttribute : PropertyAttribute
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            //Debug.Log($"{property.propertyPath}");
+            Debug.Log($"{property.propertyPath}");
 
             if (!(this.attribute is InspectorAttribute fieldName))
             {
@@ -43,11 +44,11 @@ public sealed class InspectorAttribute : PropertyAttribute
 
             if (!(path.Length > 1 && path[1] == "Array"))
             {
-                label.text = fieldName.Name;
+                label.text = OptimizeString(fieldName.Name);
             }
             else if (path.Length >= 4 && path[path.Length - 3] == "Array") // child items
             {
-                label.text = fieldName.Name;
+                label.text = OptimizeString(fieldName.Name);
             }
             //else if(path.Length == 3 && path[path.Length -2] == "Array")
             //{
@@ -60,6 +61,34 @@ public sealed class InspectorAttribute : PropertyAttribute
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             return EditorGUI.GetPropertyHeight(property); // リストとかオブジェクトで高さは合うようになるけどすごく重くなる
+        }
+
+        // Compatibility naming convention with the Editor
+        private static StringBuilder sb = new StringBuilder();
+        public static string OptimizeString(string str)
+        {
+            if (str.Length <= 1)
+            {
+                return str;
+            }
+
+            sb.Clear();
+            str = str.TrimStart('_'); // leading underscre are remove.
+            sb.Append(char.ToUpperInvariant(str[0]));
+
+            for (int i = 1; i < str.Length; i++)
+            {
+                char a = str[i];
+                char b = str[i - 1];
+
+                if (char.IsUpper(a) && char.IsLower(b))
+                {
+                    sb.Append(' ');
+                }
+                sb.Append(a);
+            }
+
+            return sb.ToString();
         }
     }
 #endif
