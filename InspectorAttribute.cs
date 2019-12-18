@@ -31,18 +31,20 @@ public sealed class InspectorAttribute : PropertyAttribute
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            Debug.Log($"{property.propertyPath}");
+            //Debug.Log($"{property.propertyPath}");
 
             if (!(this.attribute is InspectorAttribute fieldName))
             {
                 return;
             }
 
-            //Debug.Log($"{property.propertyPath}, {property.type}, {fieldName.Name}, {property.isExpanded}");
-
             string[] path = property.propertyPath.Split('.');
 
-            if (!(path.Length > 1 && path[1] == "Array"))
+            if (path.Length > 1 && path[path.Length - 2] == "Array")
+            {
+                label.text = "Element " + path[path.Length - 1].Remove(0, 5).TrimEnd(']');
+            }
+            else if (!(path.Length > 1 && path[1] == "Array"))
             {
                 label.text = OptimizeString(fieldName.Name);
             }
@@ -50,10 +52,6 @@ public sealed class InspectorAttribute : PropertyAttribute
             {
                 label.text = OptimizeString(fieldName.Name);
             }
-            //else if(path.Length == 3 && path[path.Length -2] == "Array")
-            //{
-            //    label.text = fieldName.Name;
-            //}
 
             EditorGUI.PropertyField(position, property, label, true);
         }
