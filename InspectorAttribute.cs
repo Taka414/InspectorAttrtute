@@ -3,7 +3,6 @@
 // https://forum.unity.com/threads/c-7-3-field-serializefield-support.573988/
 //
 
-using System;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
@@ -13,6 +12,10 @@ using UnityEngine;
 /// </summary>
 public sealed class InspectorAttribute : PropertyAttribute
 {
+    //
+    // Descriptions
+    // - - - - - - - - - - - - - - - - - - - -
+
     // 
     // 以下のように書くと自動実装プロパティをインスペクター上にいい感じで表示できるようになる
     // 
@@ -21,11 +24,70 @@ public sealed class InspectorAttribute : PropertyAttribute
     // [field: RenameField(nameof(Name))] // "Name"として名前が表示される
     // public string Name { get; set; }
 
+    // 
+    // 読み取り専用の場合
+    // 
+    // e.g.
+    // [field: SerializeField]
+    // [field: RenameField(nameof(Name), true)] // 読み取り専用フラグの指定
+    // public string Name { get; set; }
+
+    // 
+    // ツールチップを指定する場合
+    // 
+    // e.g.
+    // [field: SerializeField]
+    // [field: RenameField(nameof(Name), "ツールチップに表示する文字列")]
+    // public string Name { get; set; }
+
+    //
+    // Props
+    // - - - - - - - - - - - - - - - - - - - -
+
+    /// <summary>
+    /// インスペクター上に表示する名前を取得します。
+    /// </summary>
     public string Name { get; private set; }
 
-    public InspectorAttribute(string dispName) => this.Name = dispName;
+    /// <summary>
+    /// プロパティが読み取り専用かどうかを取得します。
+    /// true : 読み取り専用 / false : それ以外
+    /// </summary>
+    public bool Readonly { get; private set; }
+
+    /// <summary>
+    /// ツールチップを使用するかどうかのフラグを取得します。
+    /// true : 使用する / false : それ以外
+    /// </summary>
+    public bool UseTooltip { get; private set; }
+
+    /// <summary>
+    /// ツールチップに表示する内容を設定します。
+    /// </summary>
+    public string TooltipContents { get; private set; }
+
+    //
+    // Constructors
+    // - - - - - - - - - - - - - - - - - - - -
+
+    public InspectorAttribute(string dispName, bool isReadonly = false)
+    {
+        this.Name = dispName;
+        this.Readonly = isReadonly;
+    }
+
+    public InspectorAttribute(string dispName, string toolTip, bool isReadonly = false) : this(dispName, isReadonly)
+    {
+        this.UseTooltip = true;
+        this.TooltipContents = toolTip;
+    }
+
+    //
+    // Others
+    // - - - - - - - - - - - - - - - - - - - -
 
 #if UNITY_EDITOR
+
     [CustomPropertyDrawer(typeof(InspectorAttribute))]
     public class FieldNameDrawer : PropertyDrawer
     {
@@ -43,22 +105,41 @@ public sealed class InspectorAttribute : PropertyAttribute
             if (path.Length > 1 && path[path.Length - 2] == "Array")
             {
                 label.text = "Element " + path[path.Length - 1].Remove(0, 5).TrimEnd(']');
+                //Debug.Log($"{property.propertyPath}");
             }
             else if (!(path.Length > 1 && path[1] == "Array"))
             {
                 label.text = OptimizeString(fieldName.Name);
+                //Debug.Log($"a {label.text}");
             }
             else if (path.Length >= 4 && path[path.Length - 3] == "Array") // child items
             {
                 label.text = OptimizeString(fieldName.Name);
+                //Debug.Log($"b {label.text}");
+            }
+            //else if(path.Length == 3 && path[path.Length -2] == "Array")
+            //{
+            //    label.text = fieldName.Name;
+            //}
+
+            if (fieldName.Readonly)
+            {
+                GUI.enabled = false;
+            }
+
+            if (fieldName.UseTooltip)
+            {
+                label.tooltip = fieldName.TooltipContents;
             }
 
             EditorGUI.PropertyField(position, property, label, true);
+            
+            GUI.enabled = true;
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return EditorGUI.GetPropertyHeight(property); // リストとかオブジェクトで高さは合うようになるけどすごく重くなる
+            return EditorGUI.GetPropertyHeight(property); // リストとかオブジェクトで高さは合うようになるけど少し動作が重い
         }
 
         // Compatibility naming convention with the Editor
@@ -89,5 +170,6 @@ public sealed class InspectorAttribute : PropertyAttribute
             return sb.ToString();
         }
     }
+
 #endif
 }
